@@ -1,0 +1,29 @@
+# MC CONTROLE DE VENDAS — primeira versão
+
+## O que já funciona
+- Cadastro e edição de produtos, preço de custo, preço de venda e estoque.
+- Reposição de estoque sem recadastrar o produto.
+- Cadastro e edição de clientes.
+- Venda com vários produtos no mesmo carrinho.
+- Baixa automática do estoque ao finalizar a venda.
+- Formas de pagamento: dinheiro, PIX, débito, crédito à vista, crédito parcelado, fiado e entrada + parcelas.
+- Contas a receber com parcelas, vencimentos e recebimento parcial.
+- Preparação de cobrança pelo WhatsApp (abre a conversa com mensagem preenchida).
+- Painel de vendas, lucro estimado, valores em aberto, produtos mais vendidos e estoque baixo.
+- Taxas opcionais de cartão no cálculo estimado do lucro.
+- Exportação e restauração de backup.
+
+## Como testar no Android
+1. Extraia o arquivo ZIP.
+2. Abra `index.html` no Chrome do Android (ou transfira a pasta para um local acessível).
+3. Para usar como aplicativo instalado/offline, publique a pasta em um endereço HTTPS e abra esse endereço no Chrome. No menu do Chrome, use **Adicionar à tela inicial** ou **Instalar app**.
+4. Faça um backup regularmente em **Backup**.
+
+## Limitações importantes desta versão
+- Esta é uma aplicação web progressiva (PWA), não um APK nativo assinado.
+- Os dados ficam armazenados localmente no navegador do aparelho; não há login, nuvem nem sincronização entre aparelhos.
+- A cobrança abre o WhatsApp com texto preenchido; o envio precisa ser confirmado pelo usuário.
+- O lucro é estimado e não substitui contabilidade. Taxas configuradas afetam somente vendas futuras.
+- Antes de usar com dados reais, faça testes e mantenha backups.
+
+Cores: azul, cinza e dourado. Não inclui módulo de despesas nem fornecedores, conforme definido para o projeto.

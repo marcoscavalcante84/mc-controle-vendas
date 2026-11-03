@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#17365d">
+<meta name="description" content="Controle simples de vendas, clientes, produtos, estoque e contas a receber.">
+<link rel="manifest" href="manifest.webmanifest">
+<title>MC CONTROLE DE VENDAS</title>
+<style>
+:root{--blue:#17365d;--blue2:#285784;--gold:#c8a64b;--bg:#eef1f5;--ink:#263342;--muted:#718096;--line:#dfe5ec;--green:#23845b;--red:#b63b3b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px system-ui,-apple-system,Segoe UI,Arial,sans-serif}
+header{background:linear-gradient(120deg,var(--blue),#294f78);color:#fff;padding:15px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:5;box-shadow:0 2px 8px #10243c25}
+.logo{border:2px solid var(--gold);color:var(--gold);font-size:24px;font-weight:900;letter-spacing:-2px;border-radius:11px;padding:7px 10px}
+header h1{font-size:16px;margin:0}header small{opacity:.82}
+nav{display:flex;overflow:auto;background:#fff;position:sticky;top:67px;z-index:4;border-bottom:1px solid var(--line);scrollbar-width:thin}
+nav button{background:#fff;color:var(--blue);border:0;border-radius:0;padding:13px 14px;white-space:nowrap;font-weight:700}
+nav button.active{border-bottom:3px solid var(--gold);background:#f7f8fa}
+main{max-width:1100px;margin:auto;padding:14px}.page{display:none}.page.active{display:block}
+h2{font-size:21px;color:var(--blue);margin:4px 0 14px}.panel,.card{background:#fff;border-radius:13px;padding:15px;box-shadow:0 2px 8px #172d4610;margin-bottom:13px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin-bottom:13px}
+.card span{display:block;color:var(--muted);font-size:13px}.card strong{display:block;color:var(--blue);font-size:21px;margin-top:7px}
+.actions,.form-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+button,.btn{border:0;border-radius:9px;padding:11px 13px;background:var(--blue2);color:#fff;font-weight:700;cursor:pointer;font:inherit}
+button{font-weight:700}.secondary{background:#e7ecf2;color:var(--blue)}.gold{background:var(--gold);color:#202a35}.danger{background:var(--red)}.small{padding:7px 9px;font-size:13px}
+label{display:block;font-size:13px;font-weight:700;margin:10px 0 5px;color:#435366}
+input,select,textarea{width:100%;padding:11px;border:1px solid #cbd3dd;border-radius:8px;background:#fff;color:var(--ink);font:inherit;min-width:0}
+input:focus,select:focus{outline:2px solid #8eafd0;border-color:var(--blue2)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:4px 12px}
+.tablewrap{overflow:auto;border-radius:10px;border:1px solid var(--line)}
+table{width:100%;border-collapse:collapse;background:#fff;font-size:13px;min-width:540px}
+th,td{padding:10px 9px;border-bottom:1px solid #e8edf2;text-align:left;vertical-align:middle}
+th{background:#f4f6f9;color:var(--blue);font-size:12px}
+.muted{color:var(--muted);font-size:13px}.empty{padding:22px;text-align:center;color:var(--muted)}
+.notice{background:#fff8e5;border-left:4px solid var(--gold);padding:11px;border-radius:7px;font-size:13px;margin:10px 0}
+.good{color:var(--green);font-weight:700}.overdue{color:var(--red);font-weight:700}
+.tag{display:inline-block;background:#edf1f6;padding:4px 7px;border-radius:20px;font-size:12px}
+.total{font-size:22px;font-weight:800;color:var(--blue)}
+hr{border:0;border-top:1px solid var(--line);margin:14px 0}
+@media(max-width:520px){header{padding:11px 13px}nav{top:61px}main{padding:10px}.card strong{font-size:19px}.panel{padding:12px}}
+</style>
+</head>
+<body>
+<header><div class="logo">MC</div><div><h1>MC CONTROLE DE VENDAS</h1><small>Seu negócio sob controle</small></div></header>
+<nav id="nav">
+<button data-page="inicio" class="active">Início</button><button data-page="vendas">Vendas</button><button data-page="produtos">Produtos / estoque</button><button data-page="clientes">Clientes</button><button data-page="receber">A receber</button><button data-page="relatorios">Relatórios</button><button data-page="ajustes">Backup</button>
+</nav>
+<main>
+<section id="inicio" class="page active">
+<h2>Painel principal</h2><div class="cards" id="dashboard"></div>
+<div class="actions"><button data-go="vendas">＋ Nova venda</button><button data-go="produtos">＋ Produto</button><button data-go="clientes">＋ Cliente</button><button class="secondary" data-go="receber">Ver cobranças</button></div>
+<div class="panel"><b>Últimas vendas</b><div id="recent" class="muted" style="margin-top:8px"></div></div>
+</section>
+
+<section id="produtos" class="page">
+<h2>Produtos e estoque</h2>
+<div class="panel"><b id="productFormTitle">Cadastrar produto</b>
+<input type="hidden" id="productId">
+<div class="grid">
+<div><label>Nome do produto</label><input id="productName" placeholder="Ex.: Fone Bluetooth"></div>
+<div><label>Código (opcional)</label><input id="productCode"></div>
+<div><label>Preço de custo (R$)</label><input id="productCost" type="number" min="0" step=".01" inputmode="decimal"></div>
+<div><label>Preço de venda (R$)</label><input id="productPrice" type="number" min="0" step=".01" inputmode="decimal"></div>
+<div><label>Quantidade em estoque</label><input id="productStock" type="number" min="0" step="1" inputmode="numeric"></div>
+</div><div class="form-actions"><button id="saveProductBtn">Salvar produto</button><button class="secondary" id="clearProductBtn">Limpar</button></div>
+</div>
+<div class="panel"><b>Reposição ou ajuste de estoque</b><div class="grid"><div><label>Produto</label><select id="stockProduct"></select></div><div><label>Quantidade a adicionar</label><input id="stockQty" type="number" min="1" step="1" inputmode="numeric"></div></div><div class="form-actions"><button id="addStockBtn">Adicionar ao estoque</button></div><p class="muted">Para corrigir o saldo total, edite o produto e informe a quantidade correta.</p></div>
+<div class="tablewrap"><table><thead><tr><th>Produto</th><th>Custo</th><th>Venda</th><th>Estoque</th><th>Ação</th></tr></thead><tbody id="productRows"></tbody></table></div>
+</section>
+
+<section id="clientes" class="page">
+<h2>Clientes</h2><div class="panel"><b id="clientFormTitle">Cadastrar cliente</b><input type="hidden" id="clientId">
+<div class="grid"><div><label>Nome</label><input id="clientName"></div><div><label>WhatsApp com DDD</label><input id="clientPhone" inputmode="tel" placeholder="Ex.: 11999999999"></div><div><label>Observações</label><input id="clientNote"></div></div>
+<div class="form-actions"><button id="saveClientBtn">Salvar cliente</button><button class="secondary" id="clearClientBtn">Limpar</button></div></div>
+<div class="tablewrap"><table><thead><tr><th>Cliente</th><th>WhatsApp</th><th>Em aberto</th><th>Ação</th></tr></thead><tbody id="clientRows"></tbody></table></div>
+</section>
+
+<section id="vendas" class="page">
+<h2>Registrar venda</h2><div class="panel">
+<div class="grid"><div><label>Cliente</label><select id="saleClient"></select></div><div><label>Produto</label><select id="saleProduct"></select></div><div><label>Quantidade</label><input id="saleQty" type="number" min="1" step="1" value="1" inputmode="numeric"></div><div><label>Preço unitário (R$)</label><input id="saleUnit" type="number" min="0" step=".01" inputmode="decimal"></div></div>
+<p id="saleProductInfo" class="muted">Selecione um produto para incluir no carrinho.</p><button id="addCartBtn">Adicionar produto à venda</button>
+<hr><b>Itens da venda</b><div id="cartRows" class="muted" style="margin-top:8px">Nenhum produto adicionado.</div><p class="total" id="cartTotal">Total: R$ 0,00</p>
+<div class="grid"><div><label>Forma de pagamento</label><select id="paymentType"><option>Dinheiro</option><option>PIX</option><option>Débito</option><option>Crédito à vista</option><option>Crédito parcelado</option><option>Fiado</option><option>Entrada + parcelas</option></select></div>
+<div><label>Valor recebido / entrada (R$)</label><input id="amountPaid" type="number" min="0" step=".01" value="0" inputmode="decimal"></div>
+<div><label>Número de parcelas do saldo</label><input id="installments" type="number" min="1" max="48" value="1" inputmode="numeric"></div>
+<div><label>Primeiro vencimento</label><input id="firstDue" type="date"></div></div>
+<div class="notice">Ao finalizar, o estoque será baixado automaticamente. Para venda fiada ou parcelada, selecione o cliente. O lucro é estimado pelo preço de venda menos custo e taxas configuradas.</div>
+<div class="form-actions"><button class="gold" id="finishSaleBtn">Finalizar venda</button><button class="secondary" id="clearCartBtn">Limpar venda</button></div>
+</div>
+<div class="panel"><b>Vendas recentes</b><div class="tablewrap" style="margin-top:9px"><table><thead><tr><th>Data</th><th>Cliente</th><th>Itens</th><th>Total</th><th>Lucro estimado</th><th>Pagamento</th></tr></thead><tbody id="saleRows"></tbody></table></div></div>
+</section>
+
+<section id="receber" class="page"><h2>Contas a receber</h2><div class="cards" id="receivableStats"></div><div class="tablewrap"><table><thead><tr><th>Vencimento</th><th>Cliente</th><th>Parcela</th><th>Valor em aberto</th><th>Ações</th></tr></thead><tbody id="receivableRows"></tbody></table></div></section>
+
+<section id="relatorios" class="page"><h2>Relatórios</h2><div class="cards" id="reportCards"></div><div class="panel"><b>Produtos mais vendidos</b><div id="topProducts" style="margin-top:8px"></div></div><div class="panel"><b>Estoque baixo (5 unidades ou menos)</b><div id="lowStock" style="margin-top:8px"></div></div></section>
+
+<section id="ajustes" class="page"><h2>Backup e segurança dos dados</h2>
+<div class="panel"><b>Exportar ou restaurar backup</b><p class="muted">O backup guarda produtos, clientes, vendas, estoque e contas a receber em um arquivo JSON.</p><div class="form-actions"><button id="exportBtn">Exportar backup</button><label class="btn secondary" style="display:inline-block;margin:0">Importar backup<input id="importFile" type="file" accept="application/json" style="display:none"></label></div></div>
+<div class="panel"><b>Taxas de cartão (opcional)</b><div class="grid"><div><label>Descontar taxas no cálculo do lucro?</label><select id="feesEnabled"><option value="false">Não</option><option value="true">Sim</option></select></div><div><label>Débito (%)</label><input id="feeDebit" type="number" min="0" step=".01"></div><div><label>Crédito à vista (%)</label><input id="feeCredit" type="number" min="0" step=".01"></div><div><label>Crédito parcelado (%)</label><input id="feeInstall" type="number" min="0" step=".01"></div></div><div class="form-actions"><button id="saveFeesBtn">Salvar taxas</button></div></div>
+<div class="notice">Os dados são salvos neste navegador e aparelho. Não há sincronização em nuvem. Exporte backups regularmente e guarde uma cópia em local seguro. Ao limpar os dados do navegador, as informações podem ser apagadas.</div>
+</section>
+</main>
+<script>
+'use strict';
+const DB_KEY='mc_controle_vendas_v1';
+const $=id=>document.getElementById(id);
+const brl=n=>(Number(n)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const today=()=>{const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)};
+const uid=()=>('xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16)}));
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let db;
+try{db=JSON.parse(localStorage.getItem(DB_KEY)||'null')}catch(e){db=null}
+if(!db||!Array.isArray(db.products)||!Array.isArray(db.clients)||!Array.isArray(db.sales)||!Array.isArray(db.receivables))db={products:[],clients:[],sales:[],receivables:[],settings:{feesEnabled:false,debit:0,credit:0,install:0}};
+db.settings=db.settings||{feesEnabled:false,debit:0,credit:0,install:0};
+let cart=[];
+function save(){try{localStorage.setItem(DB_KEY,JSON.stringify(db));render()}catch(e){alert('Não foi possível salvar. Exporte um backup e verifique o espaço disponível no aparelho.')}}
+function go(page){document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===page));document.querySelectorAll('nav [data-page]').forEach(x=>x.classList.toggle('active',x.dataset.page===page));render();window.scrollTo({top:0,behavior:'smooth'})}
+document.querySelectorAll('nav [data-page]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.page)));
+document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.go)));
+
+function clearProduct(){['productId','productName','productCode','productCost','productPrice','productStock'].forEach(id=>$(id).value='');$('productFormTitle').textContent='Cadastrar produto'}
+$('clearProductBtn').addEventListener('click',clearProduct);
+$('saveProductBtn').addEventListener('click',()=>{
+ const id=$('productId').value,name=$('productName').value.trim(),code=$('productCode').value.trim();
+ const cost=Number($('productCost').value),price=Number($('productPrice').value),stock=Number($('productStock').value);
+ if(!name||$('productCost').value===''||$('productPrice').value===''||$('productStock').value===''||cost<0||price<0||!Number.isInteger(stock)||stock<0)return alert('Preencha os campos corretamente. Estoque deve ser um número inteiro igual ou maior que zero.');
+ if(id){const p=db.products.find(x=>x.id===id);if(p)Object.assign(p,{name,code,cost,price,stock})}
+ else db.products.push({id:uid(),name,code,cost,price,stock});
+ clearProduct();save();
+});
+function editProduct(id){const p=db.products.find(x=>x.id===id);if(!p)return;$('productId').value=p.id;$('productName').value=p.name;$('productCode').value=p.code;$('productCost').value=p.cost;$('productPrice').value=p.price;$('productStock').value=p.stock;$('productFormTitle').textContent='Editar produto';go('produtos')}
+$('addStockBtn').addEventListener('click',()=>{const p=db.products.find(x=>x.id===$('stockProduct').value),q=Number($('stockQty').value);if(!p||!Number.isInteger(q)||q<1)return alert('Selecione um produto e informe uma quantidade inteira válida.');p.stock+=q;$('stockQty').value='';save();alert('Estoque atualizado.')});
+
+function clearClient(){['clientId','clientName','clientPhone','clientNote'].forEach(id=>$(id).value='');$('clientFormTitle').textContent='Cadastrar cliente'}
+$('clearClientBtn').addEventListener('click',clearClient);
+$('saveClientBtn').addEventListener('click',()=>{const id=$('clientId').value,name=$('clientName').value.trim();if(!name)return alert('Informe o nome do cliente.');const data={name,phone:$('clientPhone').value.trim(),note:$('clientNote').value.trim()};if(id){const c=db.clients.find(x=>x.id===id);if(c)Object.assign(c,data)}else db.clients.push({id:uid(),...data});clearClient();save()});
+function editClient(id){const c=db.clients.find(x=>x.id===id);if(!c)return;$('clientId').value=id;$('clientName').value=c.name;$('clientPhone').value=c.phone;$('clientNote').value=c.note;$('clientFormTitle').textContent='Editar cliente';go('clientes')}
+
+function refreshSalePreview(){const p=db.products.find(x=>x.id===$('saleProduct').value);if(!p){$('saleProductInfo').textContent='Selecione um produto para incluir no carrinho.';return}$('saleUnit').value=p.price;$('saleProductInfo').textContent=`Estoque disponível: ${p.stock} | Custo unitário: ${brl(p.cost)}`;}
+$('saleProduct').addEventListener('change',refreshSalePreview);
+$('paymentType').addEventListener('change',()=>{const mode=$('paymentType').value;const needs=['Crédito parcelado','Fiado','Entrada + parcelas'].includes(mode);$('installments').disabled=!needs;if(!needs)$('installments').value=1;if(mode==='Fiado')$('amountPaid').value=0});
+$('addCartBtn').addEventListener('click',()=>{
+ const p=db.products.find(x=>x.id===$('saleProduct').value),q=Number($('saleQty').value),unit=Number($('saleUnit').value);
+ if(!p||!Number.isInteger(q)||q<1||unit<=0)return alert('Selecione o produto e informe quantidade e preço válidos.');
+ const already=cart.filter(x=>x.productId===p.id).reduce((s,x)=>s+x.qty,0);
+ if(q+already>p.stock)return alert(`Estoque insuficiente. Disponível: ${p.stock}.`);
+ cart.push({productId:p.id,name:p.name,qty:q,unit,cost:p.cost});$('saleQty').value=1;drawCart();
+});
+function drawCart(){$('cartRows').innerHTML=cart.length?`<div class="tablewrap"><table><thead><tr><th>Produto</th><th>Qtd.</th><th>Unitário</th><th>Subtotal</th><th></th></tr></thead><tbody>${cart.map((x,i)=>`<tr><td>${esc(x.name)}</td><td>${x.qty}</td><td>${brl(x.unit)}</td><td>${brl(x.qty*x.unit)}</td><td><button class="danger small" data-remove-cart="${i}">Retirar</button></td></tr>`).join('')}</tbody></table></div>`:'Nenhum produto adicionado.';$('cartTotal').textContent='Total: '+brl(cart.reduce((s,x)=>s+x.qty*x.unit,0))}
+$('cartRows').addEventListener('click',e=>{const b=e.target.closest('[data-remove-cart]');if(b){cart.splice(Number(b.dataset.removeCart),1);drawCart()}});
+$('clearCartBtn').addEventListener('click',()=>{cart=[];drawCart()});
+function addMonths(dateString,n){const d=new Date(dateString+'T12:00:00');const day=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+n);const last=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();d.setDate(Math.min(day,last));return d.toISOString().slice(0,10)}
+$('finishSaleBtn').addEventListener('click',()=>{
+ if(!cart.length)return alert('Adicione pelo menos um produto à venda.');
+ for(const item of cart){const p=db.products.find(x=>x.id===item.productId);if(!p||p.stock<item.qty)return alert(`Estoque insuficiente para ${item.name}. Atualize o carrinho.`)}
+ const client=db.clients.find(x=>x.id===$('saleClient').value)||null;
+ const mode=$('paymentType').value,total=Number(cart.reduce((s,x)=>s+x.qty*x.unit,0).toFixed(2));
+ let received=Number($('amountPaid').value||0);
+ if(mode==='Fiado')received=0;
+ if(!Number.isFinite(received)||received<0||received>total)return alert('O valor recebido deve ficar entre zero e o total da venda.');
+ const balance=Number((total-received).toFixed(2));
+ const creditModes=['Crédito parcelado','Fiado','Entrada + parcelas'];
+ if(balance>0&&creditModes.includes(mode)&&!client)return alert('Selecione o cliente para registrar parcelas ou fiado.');
+ let count=creditModes.includes(mode)?Math.max(1,Math.min(48,Number($('installments').value)||1)):1;
+ if(balance>0&&!creditModes.includes(mode)&&!confirm(`Ficará um saldo de ${brl(balance)} a receber. Deseja registrar assim mesmo?`))return;
+ const feePct=db.settings.feesEnabled?(mode==='Débito'?db.settings.debit:mode==='Crédito à vista'?db.settings.credit:mode==='Crédito parcelado'?db.settings.install:0):0;
+ const fee=Number((total*feePct/100).toFixed(2));
+ const cost=Number(cart.reduce((s,x)=>s+x.qty*x.cost,0).toFixed(2));
+ const sale={id:uid(),date:today(),clientId:client?.id||'',clientName:client?.name||'Venda balcão',items:cart.map(x=>({...x})),total,received,balance,mode,cost,fee,profit:Number((total-cost-fee).toFixed(2))};
+ cart.forEach(item=>{const p=db.products.find(x=>x.id===item.productId);p.stock-=item.qty});
+ db.sales.unshift(sale);
+ if(balance>0){
+   const due=$('firstDue').value||today();
+   for(let i=1;i<=count;i++){let amount=Number((balance/count).toFixed(2));if(i===count)amount=Number((balance-Number((balance/count).toFixed(2))*(count-1)).toFixed(2));db.receivables.push({id:uid(),saleId:sale.id,clientId:client?.id||'',clientName:client?.name||'Cliente não cadastrado',amount,paid:0,due:addMonths(due,i-1),part:i,parts:count})}
+ }
+ cart=[];$('amountPaid').value=0;$('saleQty').value=1;$('installments').value=1;$('paymentType').value='Dinheiro';$('installments').disabled=true;$('saleClient').value='';drawCart();save();alert('Venda registrada. O estoque foi atualizado automaticamente.');
+});
+
+function receive(id){const r=db.receivables.find(x=>x.id===id);if(!r)return;const open=Number((r.amount-r.paid).toFixed(2));const value=prompt(`Quanto foi recebido? Saldo desta parcela: ${brl(open)}`,open.toFixed(2));if(value===null)return;const n=Number(value);if(!Number.isFinite(n)||n<=0||n>open+.001)return alert('Informe um valor maior que zero e até o saldo em aberto.');r.paid=Number((r.paid+n).toFixed(2));save()}
+function charge(id){const r=db.receivables.find(x=>x.id===id);const c=db.clients.find(x=>x.id===r?.clientId);const phone=(c?.phone||'').replace(/\D/g,'');if(!phone)return alert('Cadastre o WhatsApp do cliente com DDD para preparar a cobrança.');const msg=`Olá, ${r.clientName}! Lembrando da parcela ${r.part}/${r.parts}, no valor de ${brl(r.amount-r.paid)}, com vencimento em ${r.due.split('-').reverse().join('/')}. Obrigado!`;window.open('https://wa.me/55'+phone+'?text='+encodeURIComponent(msg),'_blank')}
+
+function render(){
+ const open=db.receivables.reduce((s,r)=>s+Math.max(0,r.amount-r.paid),0),month=today().slice(0,7),monthSales=db.sales.filter(s=>s.date.startsWith(month)),monthTotal=monthSales.reduce((s,x)=>s+x.total,0),monthProfit=monthSales.reduce((s,x)=>s+x.profit,0),todayTotal=db.sales.filter(s=>s.date===today()).reduce((s,x)=>s+x.total,0),late=db.receivables.filter(r=>r.amount-r.paid>.001&&r.due<today()).length;
+ $('dashboard').innerHTML=[['Vendido hoje',brl(todayTotal)],['Vendas no mês',brl(monthTotal)],['Lucro estimado no mês',brl(monthProfit)],['A receber',brl(open)],['Parcelas atrasadas',late],['Produtos cadastrados',db.products.length]].map(x=>`<div class="card"><span>${x[0]}</span><strong>${x[1]}</strong></div>`).join('');
+ $('recent').innerHTML=db.sales.slice(0,5).map(s=>`<p>${s.date.split('-').reverse().join('/')} · ${esc(s.clientName)} · <b>${brl(s.total)}</b></p>`).join('')||'<div class="empty">Nenhuma venda registrada ainda.</div>';
+ $('productRows').innerHTML=db.products.map(p=>`<tr><td>${esc(p.name)}<br><span class="muted">${esc(p.code)}</span></td><td>${brl(p.cost)}</td><td>${brl(p.price)}</td><td>${p.stock}</td><td><button class="secondary small" data-edit-product="${p.id}">Editar</button></td></tr>`).join('')||'<tr><td colspan="5" class="empty">Cadastre seu primeiro produto.</td></tr>';
+ $('stockProduct').innerHTML=db.products.map(p=>`<option value="${p.id}">${esc(p.name)} (${p.stock})</option>`).join('');
+ $('saleProduct').innerHTML='<option value="">Selecione um produto</option>'+db.products.map(p=>`<option value="${p.id}">${esc(p.name)} — ${brl(p.price)} (estoque ${p.stock})</option>`).join('');
+ $('saleClient').innerHTML='<option value="">Venda balcão / sem cadastro</option>'+db.clients.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+ $('clientRows').innerHTML=db.clients.map(c=>{const due=db.receivables.filter(r=>r.clientId===c.id).reduce((s,r)=>s+Math.max(0,r.amount-r.paid),0);return `<tr><td>${esc(c.name)}</td><td>${esc(c.phone)}</td><td>${brl(due)}</td><td><button class="secondary small" data-edit-client="${c.id}">Editar</button></td></tr>`}).join('')||'<tr><td colspan="4" class="empty">Nenhum cliente cadastrado.</td></tr>';
+ $('saleRows').innerHTML=db.sales.slice(0,40).map(s=>`<tr><td>${s.date.split('-').reverse().join('/')}</td><td>${esc(s.clientName)}</td><td>${s.items.map(i=>`${esc(i.name)} (${i.qty})`).join(', ')}</td><td>${brl(s.total)}</td><td>${brl(s.profit)}</td><td>${esc(s.mode)}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">Nenhuma venda registrada.</td></tr>';
+ const pending=db.receivables.filter(r=>r.amount-r.paid>.001);
+ $('receivableStats').innerHTML=[['Total em aberto',brl(open)],['Parcelas pendentes',pending.length],['Atrasadas',late]].map(x=>`<div class="card"><span>${x[0]}</span><strong>${x[1]}</strong></div>`).join('');
+ $('receivableRows').innerHTML=pending.sort((a,b)=>a.due.localeCompare(b.due)).map(r=>`<tr><td class="${r.due<today()?'overdue':''}">${r.due.split('-').reverse().join('/')}</td><td>${esc(r.clientName)}</td><td>${r.part}/${r.parts}</td><td>${brl(r.amount-r.paid)}</td><td><button class="small" data-receive="${r.id}">Receber</button> <button class="secondary small" data-charge="${r.id}">Cobrar WhatsApp</button></td></tr>`).join('')||'<tr><td colspan="5" class="empty">Nenhuma conta pendente.</td></tr>';
+ $('reportCards').innerHTML=[['Faturamento total',brl(db.sales.reduce((s,x)=>s+x.total,0))],['Lucro estimado total',brl(db.sales.reduce((s,x)=>s+x.profit,0))],['Custo dos produtos vendidos',brl(db.sales.reduce((s,x)=>s+x.cost,0))],['Taxas estimadas',brl(db.sales.reduce((s,x)=>s+x.fee,0))]].map(x=>`<div class="card"><span>${x[0]}</span><strong>${x[1]}</strong></div>`).join('');
+ const counts={};db.sales.forEach(s=>s.items.forEach(i=>counts[i.name]=(counts[i.name]||0)+i.qty));
+ $('topProducts').innerHTML=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,10).map(x=>`<p>${esc(x[0])} — <b>${x[1]} unidade(s)</b></p>`).join('')||'<p class="muted">Ainda não há vendas.</p>';
+ const low=db.products.filter(p=>p.stock<=5);
+ $('lowStock').innerHTML=low.map(p=>`<p>${esc(p.name)} — <b>${p.stock} unidade(s)</b></p>`).join('')||'<p class="good">Nenhum produto com estoque baixo.</p>';
+ $('feesEnabled').value=String(!!db.settings.feesEnabled);$('feeDebit').value=db.settings.debit||0;$('feeCredit').value=db.settings.credit||0;$('feeInstall').value=db.settings.install||0;
+ refreshSalePreview();drawCart();
+}
+$('productRows').addEventListener('click',e=>{const b=e.target.closest('[data-edit-product]');if(b)editProduct(b.dataset.editProduct)});
+$('clientRows').addEventListener('click',e=>{const b=e.target.closest('[data-edit-client]');if(b)editClient(b.dataset.editClient)});
+$('receivableRows').addEventListener('click',e=>{const a=e.target.closest('[data-receive]'),b=e.target.closest('[data-charge]');if(a)receive(a.dataset.receive);if(b)charge(b.dataset.charge)});
+$('saveFeesBtn').addEventListener('click',()=>{db.settings={feesEnabled:$('feesEnabled').value==='true',debit:Number($('feeDebit').value)||0,credit:Number($('feeCredit').value)||0,install:Number($('feeInstall').value)||0};save();alert('Taxas salvas. Elas serão aplicadas às próximas vendas.')});
+$('exportBtn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='MC-controle-backup-'+today()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)});
+$('importFile').addEventListener('change',e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{try{const d=JSON.parse(reader.result);if(!Array.isArray(d.products)||!Array.isArray(d.clients)||!Array.isArray(d.sales)||!Array.isArray(d.receivables))throw Error();if(confirm('O backup substituirá os dados atuais. Deseja continuar?')){db=d;db.settings=db.settings||{feesEnabled:false,debit:0,credit:0,install:0};save();alert('Backup restaurado.')}}catch(err){alert('Arquivo inválido ou incompatível.')}e.target.value=''};reader.readAsText(file)});
+$('firstDue').value=today();$('installments').disabled=true;render();
+if('serviceWorker' in navigator && location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body>
+</html>
